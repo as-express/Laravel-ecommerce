@@ -14,8 +14,10 @@ class PaymentService
     public function __construct(OrderService $orderService)
     {
         $this->client = new Client();
-        $this->client->setAuth(config('yookassa.shop_id'), config('yookassa.secret_key'));
-
+        $this->client->setAuth(
+            '1090115',
+            'test_IMtWogcOKHJFye3akw1QxSdbX1wmVR9hzJTzk3jXlt0'
+        );
 
         $this->orderService = $orderService;
     }

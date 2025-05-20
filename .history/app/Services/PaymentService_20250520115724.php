@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Order;
-use Illuminate\Support\Facades\Log;
 use YooKassa\Client;
 
 class PaymentService
@@ -14,8 +13,10 @@ class PaymentService
     public function __construct(OrderService $orderService)
     {
         $this->client = new Client();
-        $this->client->setAuth(config('yookassa.shop_id'), config('yookassa.secret_key'));
-
+        $this->client->setAuth(
+            '1090115',
+            'test_IMtWogcOKHJFye3akw1QxSdbX1wmVR9hzJTzk3jXlt0'
+        );
 
         $this->orderService = $orderService;
     }
@@ -49,34 +50,41 @@ class PaymentService
     public function handle($request)
     {
         $data = $request->all();
+        $userId = $request->user()->id;
+
 
         $event = $data['event'] ?? null;
         $object = $data['object'] ?? null;
 
+        if (!$event || !$object || !isset($object['id'])) {
+            return response()->json(['error' => 'Invalid payload'], 400);
+        }
+
         $paymentId = $object['id'];
         $order = Order::where('payment_id', $paymentId)->first();
 
-        if (!$order) {
-            return response()->json(['error' => 'Order not found'], 404);
-        }
-        $order->save();
-
         switch ($event) {
             case 'payment.waiting_for_capture':
-                $order->status = 'WAITING_FOR_CAPTURE';
+                return 'WAITING_FOR_CAPTURE';
                 break;
+
             case 'payment.succeeded':
-                $order->status = 'SUCCEEDED';
+                return 'SUCCEEDED';
                 break;
+
             case 'payment.canceled':
-                $order->status = 'CANCELED';
+                return 'CANCELED';
                 break;
+
             case 'refund.succeeded':
-                $order->status = 'REFUNDED';
+                return 'REFUND_SUCCEEDED';
                 break;
+
             default:
                 return 'UNKNOWN';
+                break;
         }
+
         $order->save();
 
         return 'ok';

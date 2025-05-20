@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Order;
-use Illuminate\Support\Facades\Log;
 use YooKassa\Client;
 
 class PaymentService
@@ -14,8 +12,10 @@ class PaymentService
     public function __construct(OrderService $orderService)
     {
         $this->client = new Client();
-        $this->client->setAuth(config('yookassa.shop_id'), config('yookassa.secret_key'));
-
+        $this->client->setAuth(
+            '1090115',
+            'test_IMtWogcOKHJFye3akw1QxSdbX1wmVR9hzJTzk3jXlt0'
+        );
 
         $this->orderService = $orderService;
     }
@@ -39,10 +39,6 @@ class PaymentService
             uniqid('', true)
         );
 
-        $paymentId = $payment->getId();
-        $order->payment_id = $paymentId;
-
-        $order->save();
         return $payment;
     }
 
@@ -53,32 +49,41 @@ class PaymentService
         $event = $data['event'] ?? null;
         $object = $data['object'] ?? null;
 
+        if (!$event || !$object || !isset($object['id'])) {
+            return response()->json(['error' => 'Invalid payload'], 400);
+        }
+
         $paymentId = $object['id'];
         $order = Order::where('payment_id', $paymentId)->first();
 
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
         }
-        $order->save();
 
         switch ($event) {
             case 'payment.waiting_for_capture':
-                $order->status = 'WAITING_FOR_CAPTURE';
+                $order->status = 'waiting_capture';
                 break;
+
             case 'payment.succeeded':
-                $order->status = 'SUCCEEDED';
+                $order->status = 'paid';
+                $order->paid_at = now();
                 break;
+
             case 'payment.canceled':
-                $order->status = 'CANCELED';
+                $order->status = 'canceled';
                 break;
+
             case 'refund.succeeded':
-                $order->status = 'REFUNDED';
+                $order->status = 'refunded';
                 break;
+
             default:
-                return 'UNKNOWN';
+                return response()->json(['error' => 'Unhandled event'], 400);
         }
+
         $order->save();
 
-        return 'ok';
+        return response()->json(['ok' => true]);
     }
 }

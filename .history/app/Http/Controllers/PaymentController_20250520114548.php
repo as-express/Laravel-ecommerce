@@ -31,6 +31,5 @@ class PaymentController extends Controller
     public function handle(Request $request)
     {
         $result = $this->paymentService->handle($request);
-        return response()->json($result);
     }
 }
