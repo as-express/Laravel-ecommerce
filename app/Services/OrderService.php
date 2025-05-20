@@ -53,7 +53,7 @@ class OrderService
         $order->total_price = $totalPrice * (1 - $promoDiscount / 100);
         $order->save();
 
-        // $card->items()->detach(); 
+        $card->items()->detach();
         return $order;
     }
 

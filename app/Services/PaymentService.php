@@ -31,7 +31,7 @@ class PaymentService
                 ],
                 'confirmation' => [
                     'type' => 'redirect',
-                    'return_url' => 'https://github.com/as-express',
+                    'return_url' => '' // url,
                 ],
                 'capture' => true,
                 'description' => 'Оплата заказа',
